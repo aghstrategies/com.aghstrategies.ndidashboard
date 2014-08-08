@@ -4,24 +4,31 @@ require_once 'CRM/Core/Page.php';
 
 class CRM_Ndidashboard_Page_ContactPerMonth extends CRM_Core_Page {
   function run() {
-    $sql = "SELECT count(id) as createdthismonth FROM civicrm_contact WHERE MONTH(created_date) = MONTH(CURRENT_DATE ) AND YEAR(created_date) = YEAR(CURRENT_DATE);";
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    if ($dao->fetch()){
-      $createdthismonth = $dao->createdthismonth;
+    $date_ranges = array('thisMonth' => '', 'lastMonth' => '- INTERVAL 1 MONTH', 'twoMonths' => '- INTERVAL 2 MONTH', 'threeMonths' => '- INTERVAL 3 MONTH', 'fourMonths' => '- INTERVAL 4 MONTH', 'fiveMonths' => '- INTERVAL 5 MONTH', 'sixMonths' => '- INTERVAL 6 MONTH',
+      );
+    $createdArray = array();
+    foreach ($date_ranges as $name => $date_range){
+      $sql = "SELECT count(id) as createdlastmonth FROM civicrm_contact WHERE MONTH(created_date) = MONTH(CURRENT_DATE ".$date_range.") AND YEAR(created_date) = YEAR(CURRENT_DATE ".$date_range.");";
+      $dao = CRM_Core_DAO::executeQuery($sql);
+      if ($dao->fetch()){
+        $createdArray[$name] = $dao->createdlastmonth;
+      }
     }
-    $this->assign('createdThisMonth', $createdthismonth);
-    $sql = "SELECT count(id) as createdlastmonth FROM civicrm_contact WHERE MONTH(created_date) = MONTH(CURRENT_DATE - INTERVAL 1 MONTH) AND YEAR(created_date - INTERVAL 1 MONTH) = YEAR(CURRENT_DATE);";
-    $dao = CRM_Core_DAO::executeQuery($sql);
-    if ($dao->fetch()){
-      $createdlastmonth = $dao->createdlastmonth;
-    }
-    $this->assign('createdLastMonth', $createdlastmonth);
+  $createdAgg = array();
+  $createdTotal = array_sum($createdArray);
+  foreach ($createdArray as $name => $created){
+    if ($createdTotal<50)
+      $createdAgg[$name] = $created;
+    elseif ($createdTotal < 300 && $createdTotal >50)
+      $createdAgg[$name] = $created/10;
+    elseif ($createdTotal < 1000 && $createdTotal >300)
+      $createdAgg[$name] = $created/100;
+    else
+      $createdAgg[$name] = $created/1000;
+  }
+  $this->assign('createdArray', $createdArray);
+  $this->assign('createdAgg', $createdAgg);
 
-    // Example: Set the page-title dynamically; alternatively, declare a static title in xml/Menu/*.xml
-    CRM_Utils_System::setTitle(ts('ContactPerMonth'));
-
-    // Example: Assign a variable for use in a template
-    $this->assign('currentTime', date('Y-m-d H:i:s'));
 
     parent::run();
   }

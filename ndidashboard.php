@@ -7,19 +7,28 @@ require_once 'ndidashboard.civix.php';
  */
 function ndidashboard_civicrm_pageRun() {
     CRM_Core_Resources::singleton()->addStyleFile('com.aghstrategies.ndidashboard', 'css/bootstrap.min.css');
+    CRM_Core_Resources::singleton()->addStyleUrl('http://netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap-glyphicons.css');
 }
 
 /**
  * Implementation of hook_civicrm_pageRun
  */
 function ndidashboard_civicrm_defaults($availableDashlets, &$defaultDashlets){
-   // $contactID = CRM_Core_Session::singleton()->get('userID');
-   // $defaultDashlets[] = array(
-   //  'dashboard_id' => 3,
-   //  'is_active' => 1,
-   //  'column_no' => 1,
-   //  'contact_id' => $contactID,
-   // );
+  try{
+   $dashlet = civicrm_api3('Dashboard', 'get', array(
+      'name'  =>  'contact_per_month',
+   ));
+}
+catch (CiviCRM_API3_Exception $e) {
+   $error = $e->getMessage();
+}
+    $contactID = CRM_Core_Session::singleton()->get('userID');
+   $defaultDashlets[] = array(
+    'dashboard_id' => $dashlet['id'],
+    'is_active' => 1,
+    'column_no' => 1,
+    'contact_id' => $contactID,
+   );
  }
 
 
@@ -109,5 +118,21 @@ function ndidashboard_civicrm_upgrade($op, CRM_Queue_Queue $queue = NULL) {
  * is installed, disabled, uninstalled.
  */
 function ndidashboard_civicrm_managed(&$entities) {
-  return _ndidashboard_civix_civicrm_managed($entities);
-}
+  $entities[] = array(
+    'module' => 'com.example.modulename',
+    'name' => 'myreport',
+    'entity' => 'ReportTemplate',
+    'params' => array(
+      'version' => 3,
+    "domain_id" => "1",
+    "name" => "contact_per_month",
+    "label" => "Recently Added Contacts",
+    "url" => "civicrm/dashlets/contactpermonth&snippet=1",
+    "column_no" => "0",
+    "is_minimized" => "0",
+    "is_fullscreen" => "1",
+    "is_active" => "1",
+    "is_reserved" => "0",
+    "weight" => "0"
+    ),
+  );}
